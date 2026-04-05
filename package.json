@@ -43,15 +43,20 @@
     "files": [
       "index.js",
       "public/**/*",
-      "uploads/**/*",
-      "electron/**/*"
+      "electron/**/*",
+      "node_modules/**/*"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "index.js",
+      "node_modules/**/*"
     ],
     "mac": {
       "target": "dmg",
       "icon": "public/icon.png"
     },
     "win": {
-      "target": "nsis",
+      "target": "dir",
       "icon": "public/icon.png"
     },
     "linux": {
