@@ -1,0 +1,2218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Cloud Share</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: rgba(255, 255, 255, 0.03);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-indigo: #6366f1;
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+        
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: rgba(255, 255, 255, 0.4);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-blue: #2563eb;
+            --accent-indigo: #4f46e5;
+            --border-color: rgba(0, 0, 0, 0.08);
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .glass { 
+            background: var(--bg-secondary); 
+            backdrop-filter: blur(20px) saturate(180%); 
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+        
+        .glass-card { 
+            background: var(--bg-secondary); 
+            backdrop-filter: blur(16px) saturate(180%); 
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px var(--accent-blue), 0 0 10px var(--accent-blue); }
+            50% { box-shadow: 0 0 20px var(--accent-blue), 0 0 30px var(--accent-blue); }
+        }
+        
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        .animate-slide-in { animation: slideIn 0.4s ease-out; }
+        .animate-pulse-soft { animation: pulse 2s ease-in-out infinite; }
+        .animate-bounce { animation: bounce 1s ease-in-out infinite; }
+        .animate-glow { animation: glow 2s ease-in-out infinite; }
+        
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-blue);
+            animation: confetti 3s ease-out forwards;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 12px 20px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 300px;
+            max-width: 400px;
+            animation: slideIn 0.3s ease-out;
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0, 0, 0, 0.4);
+        }
+        .toast.success { background: rgba(16, 185, 129, 0.9); }
+        .toast.error { background: rgba(239, 68, 68, 0.9); }
+        .toast.warning { background: rgba(245, 158, 11, 0.9); }
+        .toast.info { background: rgba(59, 130, 246, 0.9); }
+        
+        /* Preview Modal */
+        .preview-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .preview-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .preview-content {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 16px;
+            overflow: hidden;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .preview-modal.active .preview-content {
+            transform: scale(1);
+        }
+        
+        /* Drag Drop Zone Enhanced */
+        .drag-active {
+            border-color: var(--accent-blue) !important;
+            background: rgba(59, 130, 246, 0.1) !important;
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 100;
+            font-size: 1.5rem;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 0 20px var(--accent-blue);
+        }
+        
+        /* File Type Filter Buttons */
+        .filter-btn {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Upload Speed Indicator */
+        .speed-indicator {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--accent-blue);
+        }
+        
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+        .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 15px 40px rgba(59, 130, 246, 0.6);
+        }
+        
+        /* Progress Ring */
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.3s ease;
+        }
+        
+        /* File Card Hover Effects */
+        .file-card {
+            position: relative;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .file-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        .file-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+        .file-card:hover::before {
+            left: 100%;
+        }
+        
+        /* View Toggle Buttons */
+        .view-toggle-btn {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+        .view-toggle-btn:hover, .view-toggle-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+        
+        /* List View Styles */
+        .file-list-view {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .file-list-view .file-card {
+            flex-direction: row;
+            align-items: center;
+            padding: 12px 16px;
+        }
+        .file-list-view .file-card .file-actions {
+            margin-left: auto;
+        }
+        
+        /* Favorites */
+        .favorite-btn {
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .favorite-btn.active {
+            color: #fbbf24;
+        }
+        .favorite-btn:hover {
+            color: #fbbf24;
+            transform: scale(1.1);
+        }
+        
+        /* Share Modal */
+        .share-link-input {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        
+        /* Recent Uploads */
+        .recent-uploads {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .recent-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .recent-item:hover {
+            background: var(--bg-secondary);
+        }
+        
+        /* File Details Modal */
+        .file-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .detail-item {
+            background: var(--bg-secondary);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .detail-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .detail-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        /* Stats Cards */
+        .stat-card {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
+            padding: 16px;
+            border-radius: 12px;
+            color: white;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        /* Context Menu */
+        .context-menu {
+            position: fixed;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 8px 0;
+            z-index: 9999;
+            min-width: 180px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        [data-theme="light"] .context-menu {
+            background: rgba(255, 255, 255, 0.8);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+        .context-menu-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .context-menu-item:hover {
+            background: var(--accent-blue);
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen p-4 md:p-8">
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+        <i class="fas fa-sun" id="themeIcon"></i>
+    </button>
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+            <div>
+                <h1 class="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                    Premium Cloud Share
+                </h1>
+                <p class="text-slate-400 mt-2 font-medium">লোকাল নেটওয়ার্কে ফাইল শেয়ারিং সহজ করুন।</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="openSettings()" class="glass px-4 py-2 rounded-2xl flex items-center gap-2 hover:bg-white/10 transition-colors" title="Settings">
+                    <i class="fas fa-cog text-slate-400"></i>
+                    <span class="text-sm font-semibold text-slate-300">Settings</span>
+                </button>
+                <button id="serverToggleBtn" onclick="toggleServer()" class="px-4 py-2 rounded-2xl flex items-center gap-3 transition-all hover:scale-105 bg-emerald-500/20 border border-emerald-500/50 hover:bg-emerald-500/30 shadow-lg shadow-emerald-500/20" title="Click to toggle server">
+                    <div id="serverStatusDot" class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]"></div>
+                    <span id="serverStatusText" class="text-sm font-bold text-emerald-300">Server Online</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Sidebar: Upload & Stats -->
+            <div class="space-y-6">
+                <div class="glass-card p-6 rounded-3xl">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <i class="fas fa-cloud-upload-alt text-blue-500"></i> Upload File
+                    </h2>
+                    <div id="dropZone" class="border-2 border-dashed border-slate-700 rounded-2xl p-8 text-center hover:border-blue-500/50 transition-colors cursor-pointer group relative">
+                        <input type="file" id="fileInput" class="hidden" multiple>
+                        <input type="file" id="folderInput" class="hidden" webkitdirectory directory multiple>
+                        <i class="fas fa-cloud-upload-alt text-4xl text-slate-500 mb-4 group-hover:text-blue-400 transition-colors"></i>
+                        <p class="text-sm text-slate-400 font-medium">Drop files here or click to browse</p>
+                        <p class="text-xs text-slate-500 mt-1">Or press Ctrl+V to paste files/text</p>
+                        <div class="flex justify-center gap-4 mt-3">
+                            <button onclick="event.stopPropagation(); document.getElementById('fileInput').click()" class="px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg text-sm font-semibold transition-colors border border-blue-500/30">
+                                <i class="fas fa-file mr-2"></i>Files
+                            </button>
+                            <button onclick="event.stopPropagation(); document.getElementById('folderInput').click()" class="px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 rounded-lg text-sm font-semibold transition-colors border border-indigo-500/30">
+                                <i class="fas fa-folder mr-2"></i>Folder
+                            </button>
+                            <button onclick="event.stopPropagation(); triggerPaste()" class="px-4 py-2 bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 rounded-lg text-sm font-semibold transition-colors border border-amber-500/30" title="Paste from clipboard (Ctrl+V)">
+                                <i class="fas fa-paste mr-2"></i>Paste
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Individual file progress container -->
+                    <div id="uploadProgressContainer" class="mt-4 space-y-2 hidden max-h-48 overflow-y-auto"></div>
+                </div>
+
+                <div class="glass-card p-6 rounded-3xl">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-clock-rotate-left text-amber-500"></i> Recent Uploads
+                    </h2>
+                    <div id="recentUploads" class="recent-uploads space-y-2">
+                        <p class="text-slate-500 text-sm text-center py-4">No recent uploads</p>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6 rounded-3xl">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-chart-pie text-purple-500"></i> Storage Stats
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalFiles">0</div>
+                            <div class="stat-label">Files</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <div class="stat-value" id="totalSize">0MB</div>
+                            <div class="stat-label">Total Size</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-6 rounded-3xl">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <i class="fas fa-network-wired text-indigo-500"></i> Network Info
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <p class="text-xs text-slate-500 mb-1 uppercase tracking-wider font-bold">IP Address</p>
+                            <p id="networkIp" class="font-mono text-blue-400 font-bold">Detecting...</p>
+                        </div>
+                        
+                        <!-- QR Code Section -->
+                        <div class="p-4 bg-white/5 rounded-2xl border border-white/5 flex flex-col items-center">
+                            <p class="text-xs text-slate-500 mb-3 uppercase tracking-wider font-bold text-center">Scan to Connect</p>
+                            <div id="qrcode" class="bg-white p-3 rounded-xl"></div>
+                            <p class="text-xs text-slate-400 mt-2 text-center">মোবাইল দিয়ে QR স্ক্যান করুন</p>
+                        </div>
+                        
+                        <div class="p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <p class="text-xs text-slate-500 mb-1 uppercase tracking-wider font-bold">Access Code</p>
+                            <p class="font-mono text-slate-300 font-bold">Local-3000</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content: File Explorer -->
+            <div class="lg:col-span-2">
+                <div class="glass-card p-4 rounded-3xl min-h-[600px]">
+                    <div class="flex flex-col gap-4 mb-8">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <button onclick="toggleViewMode()" class="view-toggle-btn" id="viewToggleBtn" title="Toggle View">
+                                    <i class="fas fa-th-large"></i>
+                                </button>
+                                <h2 class="text-2xl font-bold flex items-center gap-3">
+                                    <i class="fas fa-folder-open text-amber-500"></i> Shared Files
+                                </h2>
+                                <span id="fileCountBadge" class="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-sm font-semibold">0 files</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="showFavorites()" class="p-2 hover:bg-white/10 rounded-xl transition-colors" title="Show Favorites">
+                                    <i class="fas fa-star text-amber-400"></i>
+                                </button>
+                                <button onclick="loadFiles()" class="p-2 hover:bg-white/10 rounded-xl transition-colors" title="Refresh">
+                                    <i class="fas fa-sync-alt text-slate-400"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- File Type Filters -->
+                        <div class="flex gap-2 mb-3">
+                            <button onclick="filterByType('all')" class="filter-btn active" id="filter-all">All</button>
+                            <button onclick="filterByType('image')" class="filter-btn" id="filter-image">Images</button>
+                            <button onclick="filterByType('video')" class="filter-btn" id="filter-video">Videos</button>
+                            <button onclick="filterByType('document')" class="filter-btn" id="filter-document">Docs</button>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3 p-3 bg-slate-900/50 rounded-xl">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)" class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500">
+                                <label for="selectAllCheckbox" class="text-sm text-slate-400">Select All</label>
+                            </div>
+                            <div class="flex-1 min-w-[200px]">
+                                <div class="relative">
+                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                                    <input type="text" placeholder="Search files..." oninput="filterFiles(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                                </div>
+                            </div>
+                            <div id="batchDeleteBtn" class="hidden flex items-center gap-2">
+                                <span id="selectedCount" class="text-sm text-slate-400"></span>
+                                <button onclick="deleteSelected()" class="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-semibold transition-colors">
+                                    <i class="fas fa-trash mr-1"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="fileList" class="w-full">
+                        <!-- Files will be loaded here -->
+                        <div class="py-20 text-center text-slate-500">
+                            <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+                            <p>Loading files...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="preview-modal" onclick="closePreview()">
+        <div class="preview-content" onclick="event.stopPropagation()">
+            <button onclick="closePreview()" class="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors z-10">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="previewMedia"></div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button for Mobile -->
+    <div class="fab md:hidden" onclick="document.getElementById('fileInput').click()">
+        <i class="fas fa-plus text-white text-xl"></i>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="preview-modal" style="z-index: 2000;">
+        <div class="preview-content glass-card p-8 max-w-md w-full mx-4" onclick="event.stopPropagation()">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-lock text-2xl text-blue-400"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-200">Password Required</h2>
+                <p class="text-slate-400 mt-2">Enter password to access this server</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <input type="password" id="loginPassword" placeholder="Enter password" 
+                        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold py-3 rounded-xl transition-all">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login
+                </button>
+            </form>
+            <div id="loginError" class="mt-4 text-red-400 text-sm text-center hidden"></div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="preview-modal" style="z-index: 2000;">
+        <div class="preview-content glass-card p-8 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-slate-200 flex items-center gap-3">
+                    <i class="fas fa-cog text-blue-400"></i> Settings
+                </h2>
+                <button onclick="closeSettings()" class="w-10 h-10 hover:bg-white/10 rounded-full flex items-center justify-center text-slate-400 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Server Name -->
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-slate-300 mb-2">Server Name</label>
+                <input type="text" id="serverName" placeholder="Premium Cloud Share" 
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+            </div>
+            
+            <!-- Password Protection -->
+            <div class="mb-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                <div class="flex items-center justify-between mb-4">
+                    <label class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                        <i class="fas fa-shield-alt text-amber-400"></i> Password Protection
+                    </label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="passwordToggle" class="sr-only peer" onchange="togglePasswordSection()">
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                    </label>
+                </div>
+                
+                <div id="passwordSection" class="hidden space-y-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Current Password (if changing)</label>
+                        <input type="password" id="currentPassword" placeholder="Current password" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-blue-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">New Password</label>
+                        <input type="password" id="newPassword" placeholder="New password" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-blue-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" placeholder="Confirm password" 
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-blue-500 transition-colors">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Max Upload Size -->
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
+                    <i class="fas fa-hdd text-blue-400"></i> Max Upload Size (MB)
+                </label>
+                <input type="number" id="maxUploadSize" placeholder="Unlimited (leave empty)" 
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+                <p class="text-xs text-slate-500 mt-1">Leave empty for unlimited</p>
+            </div>
+            
+            <!-- Session Timeout -->
+            <div class="mb-6">
+                <label class="block text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
+                    <i class="fas fa-clock text-green-400"></i> Session Timeout (hours)
+                </label>
+                <input type="number" id="sessionTimeout" value="1" min="0.5" max="24" step="0.5"
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-blue-500 transition-colors">
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex gap-3">
+                <button onclick="saveSettings()" class="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold py-3 rounded-xl transition-all">
+                    <i class="fas fa-save mr-2"></i>Save Settings
+                </button>
+                <button onclick="closeSettings()" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-xl transition-all">
+                    Cancel
+                </button>
+            </div>
+            
+            <div id="settingsMessage" class="mt-4 text-center hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const folderInput = document.getElementById('folderInput');
+        const dropZone = document.getElementById('dropZone');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const progressBar = document.getElementById('progressBar');
+        const statusText = document.getElementById('statusText');
+
+        // Set Network IP from current location and generate QR code
+        document.getElementById('networkIp').innerText = window.location.host;
+        
+        // Generate QR Code for easy mobile access
+        function generateQRCode() {
+            const url = window.location.origin;
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = ''; // Clear previous
+            
+            new QRCode(qrContainer, {
+                text: url,
+                width: 128,
+                height: 128,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+        
+        // Generate QR code on load
+        generateQRCode();
+
+        // Load Files
+        async function loadFiles() {
+            const fileList = document.getElementById('fileList');
+            console.log('🔄 Loading files from /api/files...');
+            
+            try {
+                const res = await fetch('/api/files');
+                console.log('📡 Fetch status:', res.status, res.statusText);
+                
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    throw new Error(`Server error: ${res.status} ${res.statusText} - ${errorText}`);
+                }
+                
+                const files = await res.json();
+                console.log('✅ Received files:', files);
+                
+                if (!Array.isArray(files)) {
+                    throw new Error('Invalid data format received from server');
+                }
+                
+                if (files.length === 0) {
+                    fileList.innerHTML = '<div class="py-20 text-center text-slate-500 border-2 border-dashed border-slate-800 rounded-3xl"><i class="fas fa-inbox text-4xl mb-4"></i><p>কোন ফাইল পাওয়া যায়নি।</p></div>';
+                    return;
+                }
+
+                // Update file count badge
+                const fileCountBadge = document.getElementById('fileCountBadge');
+                if (fileCountBadge) {
+                    fileCountBadge.textContent = `${files.length} file${files.length !== 1 ? 's' : ''}`;
+                }
+
+                // Calculate and display real storage stats
+                updateStorageStats(files);
+
+                // Build detailed list view with table header - full width display
+                let tableHTML = `
+                    <div class="w-full">
+                        <table class="w-full text-left border-collapse" style="table-layout: fixed;">
+                            <thead>
+                                <tr class="bg-blue-600 text-white text-xs uppercase tracking-wider">
+                                    <th class="py-3 px-4 font-semibold" style="width: 35%;">Name</th>
+                                    <th class="py-3 px-4 font-semibold" style="width: 12%;">Size</th>
+                                    <th class="py-3 px-4 font-semibold" style="width: 20%;">Last Modified</th>
+                                    <th class="py-3 px-4 font-semibold" style="width: 18%;">Type</th>
+                                    <th class="py-3 px-4 font-semibold text-right" style="width: 15%;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm bg-slate-900/30">
+                `;
+
+                tableHTML += files.map((file, index) => {
+                    const displayName = file.name.split('/').pop();
+                    const folderPath = file.name.includes('/') ? file.name.substring(0, file.name.lastIndexOf('/')) : '';
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    const isPreviewable = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'mp4', 'webm', 'mkv', 'avi', 'mov'].includes(ext);
+                    const isFav = isFavorite(file.name);
+                    
+                    // Format date for display like screenshot: 2026-01-18 01:15:49
+                    const uploadDate = file.createdAt ? new Date(file.createdAt) : new Date();
+                    const dateStr = uploadDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+                    const timeStr = uploadDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    const dateTimeStr = `${dateStr} ${timeStr}`;
+                    
+                    // Format type like screenshot: image/jpeg, application/octet-stream
+                    let mimeType = file.type || 'File';
+                    if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
+                    else if (ext === 'png') mimeType = 'image/png';
+                    else if (ext === 'gif') mimeType = 'image/gif';
+                    else if (ext === 'svg') mimeType = 'image/svg+xml';
+                    else if (ext === 'webp') mimeType = 'image/webp';
+                    else if (ext === 'mp4') mimeType = 'video/mp4';
+                    else if (ext === 'webm') mimeType = 'video/webm';
+                    else if (ext === 'avi') mimeType = 'video/x-msvideo';
+                    else if (ext === 'mov') mimeType = 'video/quicktime';
+                    else if (ext === 'mkv') mimeType = 'video/x-matroska';
+                    else if (ext === 'pdf') mimeType = 'application/pdf';
+                    else if (ext === 'zip') mimeType = 'application/zip';
+                    else if (ext === 'rar') mimeType = 'application/x-rar';
+                    else if (ext === 'exe') mimeType = 'application/x-msdownload';
+                    else if (ext === 'iso') mimeType = 'application/x-iso9660-image';
+                    else mimeType = 'application/octet-stream';
+                    
+                    return `
+                        <tr class="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors group" data-filename="${file.name}" data-type="${file.type}" data-size="${file.sizeBytes || 0}" data-date="${uploadDate.getTime()}">
+                            <td class="py-3 px-4">
+                                <div class="flex items-center gap-3">
+                                    <input type="checkbox" class="file-checkbox w-4 h-4 rounded border-slate-600 bg-slate-800 text-blue-500 flex-shrink-0" value="${file.name}" onchange="updateSelectedCount()">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="font-medium text-slate-200 truncate" title="${file.name}">${displayName}</p>
+                                        ${folderPath ? `<p class="text-xs text-slate-500 truncate">${folderPath}</p>` : ''}
+                                    </div>
+                                    ${isPreviewable ? `<span class="ml-2 text-xs text-blue-400/70 opacity-0 group-hover:opacity-100 flex-shrink-0"><i class="fas fa-eye cursor-pointer" onclick="openPreview('${file.name}')"></i></span>` : ''}
+                                    ${isFav ? `<i class="fas fa-star text-amber-400 text-xs ml-1 flex-shrink-0" title="Favorite"></i>` : ''}
+                                </div>
+                            </td>
+                            <td class="py-3 px-4 text-slate-300">${file.size}</td>
+                            <td class="py-3 px-4 text-slate-300 font-mono text-xs">${dateTimeStr}</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-slate-800 rounded text-xs text-slate-400 font-mono truncate block">${mimeType}</span>
+                            </td>
+                            <td class="py-3 px-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="/shared/${file.name}" download="${displayName}" class="text-blue-400 hover:text-blue-300 transition-colors" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <button onclick="deleteItem('${file.name}')" class="text-red-400 hover:text-red-300 transition-colors" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tableHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                fileList.innerHTML = tableHTML;
+            } catch (err) {
+                console.error('❌ Error loading files:', err);
+                fileList.innerHTML = `
+                    <div class="py-20 text-center text-red-400 bg-red-950/20 rounded-3xl border border-red-500/20 p-6">
+                        <i class="fas fa-exclamation-triangle text-3xl mb-4"></i>
+                        <p class="font-bold mb-2">ফাইল লোড করতে সমস্যা হয়েছে।</p>
+                        <p class="text-xs text-slate-400 mb-4 font-mono">${err.message}</p>
+                        <button onclick="loadFiles()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-sm transition-colors">
+                            <i class="fas fa-sync-alt mr-2"></i>চেষ্টা করুন আবার
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(ext)) return 'fa-file-image';
+            if (['mp4', 'mkv', 'avi'].includes(ext)) return 'fa-file-video';
+            if (['pdf', 'doc', 'docx'].includes(ext)) return 'fa-file-pdf';
+            if (['zip', 'rar', '7z'].includes(ext)) return 'fa-file-archive';
+            if (filename.includes('/')) return 'fa-folder-open';
+            return 'fa-file-alt';
+        }
+
+        // Calculate and display real storage stats
+        function updateStorageStats(files) {
+            const totalFiles = files.length;
+            let totalBytes = 0;
+            
+            files.forEach(file => {
+                const sizeStr = file.size || '0 B';
+                const parts = sizeStr.split(' ');
+                const value = parseFloat(parts[0]);
+                const unit = parts[1] || 'B';
+                
+                const multipliers = {
+                    'B': 1,
+                    'KB': 1024,
+                    'MB': 1024 * 1024,
+                    'GB': 1024 * 1024 * 1024,
+                    'TB': 1024 * 1024 * 1024 * 1024
+                };
+                
+                totalBytes += value * (multipliers[unit] || 1);
+            });
+            
+            // Format total size
+            let formattedSize;
+            if (totalBytes >= 1024 * 1024 * 1024) {
+                formattedSize = (totalBytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+            } else if (totalBytes >= 1024 * 1024) {
+                formattedSize = (totalBytes / (1024 * 1024)).toFixed(1) + ' MB';
+            } else if (totalBytes >= 1024) {
+                formattedSize = (totalBytes / 1024).toFixed(1) + ' KB';
+            } else {
+                formattedSize = totalBytes + ' B';
+            }
+            
+            // Update stats display
+            const totalFilesEl = document.getElementById('totalFiles');
+            const totalSizeEl = document.getElementById('totalSize');
+            
+            if (totalFilesEl) totalFilesEl.textContent = totalFiles;
+            if (totalSizeEl) totalSizeEl.textContent = formattedSize;
+        }
+
+        // Theme Toggle
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const currentTheme = body.getAttribute('data-theme');
+            
+            if (currentTheme === 'light') {
+                body.removeAttribute('data-theme');
+                themeIcon.className = 'fas fa-sun';
+                showToast('Dark mode enabled', 'info');
+            } else {
+                body.setAttribute('data-theme', 'light');
+                themeIcon.className = 'fas fa-moon';
+                showToast('Light mode enabled', 'info');
+            }
+            saveThemePreference();
+        }
+
+        // Server Toggle (On/Off)
+        let isServerRunning = true;
+        
+        async function toggleServer() {
+            const newState = !isServerRunning;
+            
+            try {
+                const res = await fetch('/api/server/toggle', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Session-Token': sessionToken
+                    },
+                    body: JSON.stringify({ running: newState })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    isServerRunning = data.running;
+                    updateServerStatusUI(isServerRunning);
+                    showToast(isServerRunning ? 'Server started' : 'Server stopped', isServerRunning ? 'success' : 'warning');
+                } else {
+                    showToast(data.message || 'Failed to toggle server', 'error');
+                }
+            } catch (err) {
+                console.error('Server toggle error:', err);
+                showToast('Error toggling server status', 'error');
+            }
+        }
+        
+        function updateServerStatusUI(running) {
+            const dot = document.getElementById('serverStatusDot');
+            const text = document.getElementById('serverStatusText');
+            
+            if (running) {
+                dot.className = 'h-2 w-2 rounded-full bg-emerald-500 animate-pulse';
+                text.className = 'text-sm font-semibold text-emerald-400';
+                text.textContent = 'Server Online';
+            } else {
+                dot.className = 'h-2 w-2 rounded-full bg-red-500';
+                text.className = 'text-sm font-semibold text-red-400';
+                text.textContent = 'Server Offline';
+            }
+        }
+        
+        // Check server status on load
+        async function checkServerStatus() {
+            try {
+                const res = await fetch('/api/server/status');
+                const data = await res.json();
+                isServerRunning = data.running;
+                updateServerStatusUI(isServerRunning);
+            } catch (err) {
+                console.error('Failed to check server status:', err);
+                updateServerStatusUI(false);
+            }
+        }
+        
+        // Initialize server status on load
+        checkServerStatus();
+
+        // File Type Filter
+        let currentFilter = 'all';
+        
+        function filterByType(type) {
+            currentFilter = type;
+            
+            // Update button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`filter-${type}`).classList.add('active');
+            
+            // Filter table rows
+            const rows = document.querySelectorAll('tbody tr');
+            let visibleCount = 0;
+            rows.forEach(row => {
+                const fileName = row.getAttribute('data-filename')?.toLowerCase() || '';
+                const ext = fileName.split('.').pop();
+                
+                let show = false;
+                if (type === 'all') show = true;
+                else if (type === 'image' && ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp'].includes(ext)) show = true;
+                else if (type === 'video' && ['mp4', 'webm', 'mkv', 'avi', 'mov'].includes(ext)) show = true;
+                else if (type === 'document' && ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) show = true;
+                
+                row.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+            
+            // Update file count badge for filtered view
+            const fileCountBadge = document.getElementById('fileCountBadge');
+            if (fileCountBadge && type !== 'all') {
+                fileCountBadge.textContent = `${visibleCount} file${visibleCount !== 1 ? 's' : ''} (${type})`;
+            } else if (fileCountBadge) {
+                fileCountBadge.textContent = `${visibleCount} file${visibleCount !== 1 ? 's' : ''}`;
+            }
+            
+            showToast(`Filtered by ${type}`, 'info');
+        }
+
+        // Confetti Animation
+        function createConfetti() {
+            const colors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => confetti.remove(), 3000);
+            }
+        }
+
+        // Enhanced Drag and Drop
+        dropZone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-active');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            if (!dropZone.contains(e.relatedTarget)) {
+                dropZone.classList.remove('drag-active');
+            }
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-active');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                showToast(`${files.length} files dropped!`, 'info');
+                uploadItems(files);
+            }
+        });
+        fileInput.onchange = (e) => uploadItems(e.target.files);
+        folderInput.onchange = (e) => uploadItems(e.target.files);
+
+        // Drag and Drop
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('border-blue-500'); };
+        dropZone.ondragleave = () => { dropZone.classList.remove('border-blue-500'); };
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500');
+            if (e.dataTransfer.items) {
+                // Support folder drop in modern browsers
+                const files = [];
+                const traverseFileTree = (item, path = "") => {
+                    if (item.isFile) {
+                        item.file((file) => {
+                            file.relativePath = path + file.name;
+                            files.push(file);
+                            if (files.length === totalItems) uploadItems(files);
+                        });
+                    } else if (item.isDirectory) {
+                        const dirReader = item.createReader();
+                        dirReader.readEntries((entries) => {
+                            entries.forEach((entry) => traverseFileTree(entry, path + item.name + "/"));
+                        });
+                    }
+                };
+                
+                const items = e.dataTransfer.items;
+                // Note: This is simplified. Real recursive drop is complex. 
+                // For now, handle simple file drop and use buttons for folders.
+                uploadItems(e.dataTransfer.files);
+            }
+        };
+
+        // Create progress element for individual file
+        function createFileProgressElement(fileName, index) {
+            const container = document.getElementById('uploadProgressContainer');
+            const shortName = fileName.length > 30 ? fileName.substring(0, 27) + '...' : fileName;
+            
+            const progressDiv = document.createElement('div');
+            progressDiv.id = `progress-${index}`;
+            progressDiv.className = 'bg-slate-800/80 rounded-xl p-3 border border-slate-700/50';
+            progressDiv.innerHTML = `
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <i class="fas fa-file text-blue-400 text-sm"></i>
+                        <span class="text-sm text-slate-300 truncate" title="${fileName}">${shortName}</span>
+                    </div>
+                    <span id="percent-${index}" class="text-sm font-bold text-blue-400">0%</span>
+                </div>
+                <div class="w-full bg-slate-900 rounded-full h-2 mb-1">
+                    <div id="bar-${index}" class="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-slate-500">
+                    <span id="status-${index}">Waiting...</span>
+                    <span id="time-${index}">--:--</span>
+                </div>
+            `;
+            
+            container.appendChild(progressDiv);
+            return progressDiv;
+        }
+
+        // Update individual file progress
+        function updateFileProgress(index, percent, loaded, total, startTime) {
+            const bar = document.getElementById(`bar-${index}`);
+            const percentText = document.getElementById(`percent-${index}`);
+            const statusText = document.getElementById(`status-${index}`);
+            const timeText = document.getElementById(`time-${index}`);
+            
+            if (!bar) return;
+            
+            bar.style.width = percent + '%';
+            percentText.textContent = Math.round(percent) + '%';
+            
+            const loadedMB = (loaded / 1024 / 1024).toFixed(1);
+            const totalMB = (total / 1024 / 1024).toFixed(1);
+            statusText.textContent = `${loadedMB} MB / ${totalMB} MB`;
+            
+            // Calculate time remaining
+            if (startTime && percent > 0 && percent < 100) {
+                const elapsed = Date.now() - startTime;
+                const rate = percent / elapsed;
+                const remaining = (100 - percent) / rate;
+                const seconds = Math.ceil(remaining / 1000);
+                
+                if (seconds > 60) {
+                    timeText.textContent = `${Math.ceil(seconds / 60)}m ${seconds % 60}s`;
+                } else {
+                    timeText.textContent = `${seconds}s`;
+                }
+            } else if (percent >= 100) {
+                timeText.textContent = 'Complete';
+                timeText.className = 'text-xs text-emerald-400';
+                statusText.textContent = 'Done!';
+                statusText.className = 'text-xs text-emerald-400';
+            }
+        }
+
+        // Upload files in parallel (all at same time) with individual progress
+        async function uploadItems(files) {
+            if (!files || files.length === 0) return;
+
+            const container = document.getElementById('uploadProgressContainer');
+            container.classList.remove('hidden');
+            container.innerHTML = '';
+
+            const fileArray = Array.from(files);
+            
+            // Create progress elements for all files
+            fileArray.forEach((file, index) => {
+                const path = file.webkitRelativePath || file.name;
+                createFileProgressElement(path, index);
+            });
+
+            // Upload all files in parallel (simultaneously)
+            const uploadPromises = fileArray.map((file, index) => {
+                const path = file.webkitRelativePath || file.name;
+                const startTime = Date.now();
+
+                // Update status to uploading
+                const statusText = document.getElementById(`status-${index}`);
+                if (statusText) {
+                    statusText.textContent = 'Uploading...';
+                    statusText.className = 'text-xs text-blue-400';
+                }
+
+                return uploadSingleFile(file, path, index, startTime)
+                    .then(() => ({ success: true, index }))
+                    .catch((err) => {
+                        const percentText = document.getElementById(`percent-${index}`);
+                        const bar = document.getElementById(`bar-${index}`);
+                        if (percentText) {
+                            percentText.textContent = 'Failed';
+                            percentText.className = 'text-sm font-bold text-red-400';
+                        }
+                        if (bar) bar.className = 'bg-red-500 h-2 rounded-full';
+                        return { success: false, index, error: err };
+                    });
+            });
+
+            // Wait for all uploads to complete
+            const results = await Promise.all(uploadPromises);
+            
+            const successCount = results.filter(r => r.success).length;
+            const failCount = results.filter(r => !r.success).length;
+
+            // Show completion summary with toast
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'mt-3 p-3 rounded-xl text-center text-sm font-semibold ' + 
+                (failCount === 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400');
+            summaryDiv.innerHTML = `
+                <i class="fas fa-check-circle mr-2"></i>
+                ${successCount} uploaded, ${failCount} failed
+            `;
+            container.appendChild(summaryDiv);
+
+            // Show toast notification
+            if (failCount === 0) {
+                showToast(`${successCount} files uploaded successfully!`, 'success');
+            } else {
+                showToast(`${successCount} uploaded, ${failCount} failed`, 'warning');
+            }
+
+            // Reload file list instantly
+            console.log('🔄 Upload complete, refreshing file list...');
+            setTimeout(() => {
+                loadFiles();
+            }, 500);
+            
+            // Hide progress after 3 seconds
+            setTimeout(() => {
+                container.classList.add('hidden');
+                container.innerHTML = '';
+            }, 3000);
+        }
+
+        // Upload single file with progress tracking
+        function uploadSingleFile(file, path, index, startTime) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('path', path);
+
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = (e.loaded / e.total) * 100;
+                        updateFileProgress(index, percent, e.loaded, e.total, startTime);
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        updateFileProgress(index, 100, e.total, e.total, startTime);
+                        resolve();
+                    } else {
+                        reject(new Error('Upload failed'));
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    reject(new Error('Network error'));
+                });
+
+                xhr.open('POST', '/api/upload', true);
+                xhr.send(formData);
+            });
+        }
+
+        // Delete single item with toast notification
+        async function deleteItem(fileName) {
+            console.log('🗑️ Delete clicked for:', fileName);
+            
+            // Show confirmation modal instead of alert
+            if (!confirm(`Are you sure you want to delete "${fileName.split('/').pop()}"?`)) {
+                return;
+            }
+
+            showToast(`Deleting ${fileName.split('/').pop()}...`, 'info', 2000);
+
+            try {
+                console.log('📤 Sending DELETE request for:', fileName);
+                const res = await fetch('/api/delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: fileName })
+                });
+                
+                console.log('📥 Response status:', res.status);
+                const result = await res.json();
+                console.log('📥 Response body:', result);
+
+                if (res.ok) {
+                    console.log('✅ Deleted:', fileName);
+                    showToast(`✅ Deleted: ${fileName.split('/').pop()}`, 'success');
+                    loadFiles();
+                } else {
+                    console.error('❌ Delete failed:', result);
+                    showToast(`❌ Delete failed: ${result.message || 'Unknown error'}`, 'error');
+                }
+            } catch (err) {
+                console.error('❌ Delete error:', err);
+                showToast(`❌ Delete error: ${err.message}`, 'error');
+            }
+        }
+
+        // Update selected count and show/hide batch delete button
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+            const selectedCount = document.getElementById('selectedCount');
+            
+            if (checkboxes.length > 0) {
+                batchDeleteBtn?.classList.remove('hidden');
+                if (selectedCount) selectedCount.textContent = `${checkboxes.length} selected`;
+            } else {
+                batchDeleteBtn?.classList.add('hidden');
+                if (selectedCount) selectedCount.textContent = '';
+            }
+        }
+
+        // Select/Deselect all
+        function toggleSelectAll(checked) {
+            document.querySelectorAll('.file-checkbox').forEach(cb => cb.checked = checked);
+            updateSelectedCount();
+        }
+
+        // Delete selected items with toast notifications
+        async function deleteSelected() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            if (checkboxes.length === 0) return;
+            
+            if (!confirm(`Delete ${checkboxes.length} selected items?`)) {
+                return;
+            }
+
+            showToast(`Deleting ${checkboxes.length} items...`, 'info', 2000);
+
+            const filesToDelete = Array.from(checkboxes).map(cb => cb.value);
+            let successCount = 0;
+            let failCount = 0;
+            let errorDetails = [];
+
+            for (const fileName of filesToDelete) {
+                console.log(`🗑️ Attempting to delete: ${fileName}`);
+                try {
+                    const res = await fetch('/api/delete', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ path: fileName })
+                    });
+                    
+                    const result = await res.json();
+                    console.log(`📊 Response for ${fileName}:`, res.status, result);
+                    
+                    if (res.ok) {
+                        successCount++;
+                        console.log(`✅ Deleted: ${fileName}`);
+                    } else {
+                        failCount++;
+                        errorDetails.push(`${fileName}: ${result.message || 'Unknown error'}`);
+                        console.error(`❌ Failed to delete ${fileName}:`, result);
+                    }
+                } catch (err) {
+                    failCount++;
+                    errorDetails.push(`${fileName}: ${err.message}`);
+                    console.error(`❌ Network error for ${fileName}:`, err);
+                }
+            }
+
+            // Show toast notification for results
+            if (failCount > 0) {
+                console.error('Delete failures:', errorDetails);
+                showToast(`⚠️ Deleted: ${successCount}, Failed: ${failCount}`, 'warning', 5000);
+            } else {
+                showToast(`✅ Successfully deleted ${successCount} items!`, 'success');
+            }
+            
+            loadFiles();
+        }
+
+        // Search/Filter files
+        function filterFiles(searchTerm) {
+            const cards = document.querySelectorAll('.file-card');
+            const term = searchTerm.toLowerCase();
+            
+            cards.forEach(card => {
+                const fileName = card.getAttribute('data-filename').toLowerCase();
+                if (fileName.includes(term)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="fas ${icons[type]}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'fadeIn 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // File Preview System
+        function openPreview(fileName) {
+            const ext = fileName.split('.').pop().toLowerCase();
+            const modal = document.getElementById('previewModal');
+            const content = document.getElementById('previewMedia');
+            
+            const isImage = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext);
+            const isVideo = ['mp4', 'webm', 'mkv', 'avi', 'mov'].includes(ext);
+            
+            if (isImage) {
+                content.innerHTML = `<img src="/shared/${fileName}" class="max-w-full max-h-[80vh] rounded-lg" alt="${fileName}">`;
+                modal.classList.add('active');
+            } else if (isVideo) {
+                content.innerHTML = `
+                    <video controls class="max-w-full max-h-[80vh] rounded-lg">
+                        <source src="/shared/${fileName}" type="video/${ext}">
+                    </video>
+                `;
+                modal.classList.add('active');
+            } else {
+                showToast('Preview not available for this file type', 'warning');
+            }
+        }
+
+        function closePreview() {
+            const modal = document.getElementById('previewModal');
+            const content = document.getElementById('previewMedia');
+            modal.classList.remove('active');
+            // Clear content to stop video/audio playback
+            setTimeout(() => {
+                content.innerHTML = '';
+            }, 300);
+        }
+
+        // Sort files
+        let currentSort = 'name';
+        let sortDirection = 'asc';
+        
+        function sortFiles(criteria) {
+            if (currentSort === criteria) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort = criteria;
+                sortDirection = 'asc';
+            }
+            
+            const fileList = document.getElementById('fileList');
+            const cards = Array.from(fileList.children);
+            
+            cards.sort((a, b) => {
+                const nameA = a.getAttribute('data-filename').toLowerCase();
+                const nameB = b.getAttribute('data-filename').toLowerCase();
+                
+                if (criteria === 'name') {
+                    return sortDirection === 'asc' 
+                        ? nameA.localeCompare(nameB)
+                        : nameB.localeCompare(nameA);
+                }
+                return 0;
+            });
+            
+            cards.forEach(card => fileList.appendChild(card));
+            showToast(`Sorted by ${criteria} (${sortDirection})`, 'info');
+        }
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+A - Select All
+            if (e.ctrlKey && e.key === 'a') {
+                e.preventDefault();
+                toggleSelectAll(true);
+                showToast('All files selected', 'info');
+            }
+            
+            // Delete key - Delete selected
+            if (e.key === 'Delete' && !e.ctrlKey && !e.altKey) {
+                const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+                if (checkboxes.length > 0) {
+                    deleteSelected();
+                }
+            }
+            
+            // Escape - Close preview
+            if (e.key === 'Escape') {
+                closePreview();
+            }
+        });
+
+        // Clipboard Paste Handler - Ctrl+V
+        document.addEventListener('paste', (e) => {
+            const items = e.clipboardData.items;
+            const files = [];
+            let textContent = null;
+
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                
+                if (item.kind === 'file') {
+                    const file = item.getAsFile();
+                    if (file) files.push(file);
+                } else if (item.kind === 'string' && item.type === 'text/plain') {
+                    item.getAsString((text) => {
+                        textContent = text;
+                    });
+                }
+            }
+
+            if (files.length > 0) {
+                e.preventDefault();
+                showToast(`Pasting ${files.length} file(s)...`, 'info');
+                uploadItems(files);
+            } else if (textContent) {
+                e.preventDefault();
+                showToast('Pasting text as file...', 'info');
+                uploadTextAsFile(textContent, 'pasted-text.txt');
+            }
+        });
+
+        // Trigger paste via button
+        async function triggerPaste() {
+            try {
+                const clipboardItems = await navigator.clipboard.read();
+                let filesFound = false;
+                
+                for (const item of clipboardItems) {
+                    if (item.types.includes('image/png') || item.types.includes('image/jpeg')) {
+                        const blob = await item.getType(item.types.find(t => t.startsWith('image/')));
+                        const file = new File([blob], `pasted-image-${Date.now()}.png`, { type: blob.type });
+                        uploadItems([file]);
+                        filesFound = true;
+                        showToast('Image pasted successfully!', 'success');
+                    }
+                }
+                
+                if (!filesFound) {
+                    const text = await navigator.clipboard.readText();
+                    if (text) {
+                        uploadTextAsFile(text, `pasted-text-${Date.now()}.txt`);
+                        showToast('Text pasted successfully!', 'success');
+                    } else {
+                        showToast('No files or text found in clipboard', 'warning');
+                    }
+                }
+            } catch (err) {
+                console.error('Clipboard access failed:', err);
+                showToast('Unable to access clipboard. Try Ctrl+V instead.', 'warning');
+            }
+        }
+
+        // Upload text content as a file
+        async function uploadTextAsFile(text, fileName) {
+            const blob = new Blob([text], { type: 'text/plain' });
+            const file = new File([blob], fileName, { type: 'text/plain' });
+            uploadItems([file]);
+        }
+
+        // Session token storage
+        let sessionToken = localStorage.getItem('sessionToken') || '';
+        let isPasswordProtected = false;
+
+        // Check authentication status on load
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/status', {
+                    headers: sessionToken ? { 'X-Session-Token': sessionToken } : {}
+                });
+                const data = await res.json();
+                
+                isPasswordProtected = data.passwordEnabled;
+                
+                if (data.passwordEnabled && !data.isAuthenticated) {
+                    document.getElementById('loginModal').classList.add('active');
+                } else {
+                    document.getElementById('loginModal').classList.remove('active');
+                }
+                
+                if (data.serverName) {
+                    document.title = data.serverName;
+                }
+            } catch (err) {
+                console.error('Auth check failed:', err);
+            }
+        }
+
+        // Handle login
+        async function handleLogin(e) {
+            e.preventDefault();
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    sessionToken = data.token;
+                    localStorage.setItem('sessionToken', sessionToken);
+                    document.getElementById('loginModal').classList.remove('active');
+                    showToast('Login successful!', 'success');
+                    loadFiles();
+                } else {
+                    errorDiv.textContent = data.message || 'Invalid password';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Login failed. Please try again.';
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        // Logout
+        async function logout() {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: { 'X-Session-Token': sessionToken }
+            });
+            sessionToken = '';
+            localStorage.removeItem('sessionToken');
+            showToast('Logged out', 'info');
+            checkAuth();
+        }
+
+        // Settings functions
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+            loadSettings();
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        function togglePasswordSection() {
+            const checkbox = document.getElementById('passwordToggle');
+            const section = document.getElementById('passwordSection');
+            if (checkbox.checked) {
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
+        }
+
+        async function loadSettings() {
+            try {
+                const res = await fetch('/api/settings', {
+                    headers: sessionToken ? { 'X-Session-Token': sessionToken } : {}
+                });
+                const data = await res.json();
+                
+                document.getElementById('serverName').value = data.serverName || '';
+                document.getElementById('passwordToggle').checked = data.passwordEnabled;
+                document.getElementById('maxUploadSize').value = data.maxUploadSize || '';
+                document.getElementById('sessionTimeout').value = (data.sessionTimeout / 3600000).toFixed(1);
+                
+                togglePasswordSection();
+            } catch (err) {
+                console.error('Failed to load settings:', err);
+            }
+        }
+
+        async function saveSettings() {
+            const messageDiv = document.getElementById('settingsMessage');
+            
+            const settings = {
+                serverName: document.getElementById('serverName').value,
+                maxUploadSize: document.getElementById('maxUploadSize').value || null,
+                sessionTimeout: parseFloat(document.getElementById('sessionTimeout').value) * 3600000
+            };
+            
+            try {
+                // Build headers - only add session token if it exists
+                const headers = { 'Content-Type': 'application/json' };
+                if (sessionToken) {
+                    headers['X-Session-Token'] = sessionToken;
+                }
+                
+                // Save general settings
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(settings)
+                });
+                
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.message || 'Failed to save settings');
+                }
+                
+                // Handle password settings if changed
+                const passwordEnabled = document.getElementById('passwordToggle').checked;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                
+                if (newPassword || passwordEnabled !== isPasswordProtected) {
+                    if (newPassword && newPassword !== confirmPassword) {
+                        throw new Error('Passwords do not match');
+                    }
+                    
+                    const passwordRes = await fetch('/api/settings/password', {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({
+                            currentPassword: document.getElementById('currentPassword').value,
+                            newPassword: newPassword,
+                            enabled: passwordEnabled
+                        })
+                    });
+                    
+                    if (!passwordRes.ok) {
+                        const err = await passwordRes.json();
+                        throw new Error(err.message || 'Failed to update password');
+                    }
+                    
+                    // Save token if returned (when setting password for first time)
+                    const passwordData = await passwordRes.json();
+                    if (passwordData.token) {
+                        sessionToken = passwordData.token;
+                        localStorage.setItem('sessionToken', sessionToken);
+                        console.log('🔑 Token saved after setting password');
+                    }
+                }
+                
+                messageDiv.textContent = 'Settings saved successfully!';
+                messageDiv.className = 'mt-4 text-center text-emerald-400';
+                messageDiv.classList.remove('hidden');
+                showToast('Settings saved!', 'success');
+                
+                setTimeout(() => {
+                    closeSettings();
+                    messageDiv.classList.add('hidden');
+                }, 1500);
+                
+            } catch (err) {
+                console.error('Save settings error:', err);
+                messageDiv.textContent = err.message || 'Failed to save settings';
+                messageDiv.className = 'mt-4 text-center text-red-400';
+                messageDiv.classList.remove('hidden');
+            }
+        }
+
+        // ================= PREMIUM FEATURES =================
+        
+        // View Mode Toggle (Grid/List)
+        let isGridView = true;
+        function toggleViewMode() {
+            isGridView = !isGridView;
+            const fileList = document.getElementById('fileList');
+            const btn = document.getElementById('viewToggleBtn');
+            const icon = btn.querySelector('i');
+            
+            if (isGridView) {
+                fileList.className = 'grid sm:grid-cols-2 gap-4';
+                icon.className = 'fas fa-th-large';
+                btn.title = 'Switch to List View';
+            } else {
+                fileList.className = 'file-list-view';
+                icon.className = 'fas fa-list';
+                btn.title = 'Switch to Grid View';
+            }
+            showToast(isGridView ? 'Grid view enabled' : 'List view enabled', 'info');
+        }
+        
+        // Favorites System
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        
+        function toggleFavorite(fileName, event) {
+            if (event) event.stopPropagation();
+            const index = favorites.indexOf(fileName);
+            if (index > -1) {
+                favorites.splice(index, 1);
+                showToast('Removed from favorites', 'info');
+            } else {
+                favorites.push(fileName);
+                showToast('Added to favorites!', 'success');
+            }
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            loadFiles();
+        }
+        
+        function isFavorite(fileName) {
+            return favorites.includes(fileName);
+        }
+        
+        function showFavorites() {
+            const fileList = document.getElementById('fileList');
+            if (favorites.length === 0) {
+                showToast('No favorites yet', 'info');
+                return;
+            }
+            
+            const cards = document.querySelectorAll('.file-card');
+            let visibleCount = 0;
+            cards.forEach(card => {
+                const fileName = card.getAttribute('data-filename');
+                if (favorites.includes(fileName)) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            showToast(`Showing ${visibleCount} favorites`, 'info');
+        }
+        
+        // System Theme Detection - Defaults to dark, only switches to light if explicitly set
+        function detectSystemTheme() {
+            // Check if user has a saved preference
+            const savedTheme = localStorage.getItem('themePreference');
+            if (savedTheme === 'light') {
+                document.body.setAttribute('data-theme', 'light');
+                document.getElementById('themeIcon').className = 'fas fa-moon';
+            }
+            // Default is dark mode - no changes needed
+        }
+        
+        // Save theme preference
+        function saveThemePreference() {
+            const isLight = document.body.getAttribute('data-theme') === 'light';
+            localStorage.setItem('themePreference', isLight ? 'light' : 'dark');
+        }
+        
+        // Share Link Generation
+        function generateShareLink(fileName) {
+            const baseUrl = window.location.origin;
+            const shareUrl = `${baseUrl}/shared/${encodeURIComponent(fileName)}`;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                showToast('Share link copied!', 'success');
+            }).catch(() => {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = shareUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast('Share link copied!', 'success');
+            });
+        }
+        
+        // Recent Uploads Tracker
+        let recentUploads = JSON.parse(localStorage.getItem('recentUploads') || '[]');
+        
+        function addToRecentUploads(fileName, size) {
+            const upload = {
+                name: fileName,
+                size: size,
+                time: Date.now()
+            };
+            recentUploads.unshift(upload);
+            if (recentUploads.length > 10) recentUploads.pop();
+            localStorage.setItem('recentUploads', JSON.stringify(recentUploads));
+            displayRecentUploads();
+        }
+        
+        function displayRecentUploads() {
+            const container = document.getElementById('recentUploads');
+            if (recentUploads.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-sm text-center py-4">No recent uploads</p>';
+                return;
+            }
+            
+            container.innerHTML = recentUploads.map(item => {
+                const timeAgo = getTimeAgo(item.time);
+                const displayName = item.name.split('/').pop();
+                return `
+                    <div class="recent-item">
+                        <i class="fas fa-file text-blue-400 text-sm"></i>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-slate-300 truncate" title="${item.name}">${displayName}</p>
+                            <p class="text-xs text-slate-500">${timeAgo}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function getTimeAgo(timestamp) {
+            const seconds = Math.floor((Date.now() - timestamp) / 1000);
+            if (seconds < 60) return 'Just now';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours}h ago`;
+            return `${Math.floor(hours / 24)}d ago`;
+        }
+        
+        // File Details Modal
+        function showFileDetails(fileName, size) {
+            const ext = fileName.split('.').pop().toLowerCase();
+            const displayName = fileName.split('/').pop();
+            
+            const detailsHTML = `
+                <div class="file-details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">File Name</div>
+                        <div class="detail-value truncate">${displayName}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Size</div>
+                        <div class="detail-value">${size}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Type</div>
+                        <div class="detail-value">${ext.toUpperCase()}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Path</div>
+                        <div class="detail-value truncate">${fileName}</div>
+                    </div>
+                </div>
+                <div class="mt-6 flex gap-3">
+                    <button onclick="generateShareLink('${fileName}')" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition-colors">
+                        <i class="fas fa-share-alt mr-2"></i>Share
+                    </button>
+                    <button onclick="closePreview()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                        Close
+                    </button>
+                </div>
+            `;
+            
+            const modal = document.getElementById('previewModal');
+            const content = document.getElementById('previewMedia');
+            content.innerHTML = `
+                <div class="glass-card p-6 max-w-md w-full">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-info-circle text-blue-400"></i> File Details
+                    </h3>
+                    ${detailsHTML}
+                </div>
+            `;
+            modal.classList.add('active');
+        }
+        
+        // Context Menu
+        let contextMenu = null;
+        
+        function showContextMenu(e, fileName, size) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (contextMenu) {
+                contextMenu.remove();
+                contextMenu = null;
+            }
+            
+            const isFav = isFavorite(fileName);
+            contextMenu = document.createElement('div');
+            contextMenu.className = 'context-menu';
+            contextMenu.style.left = e.pageX + 'px';
+            contextMenu.style.top = e.pageY + 'px';
+            contextMenu.innerHTML = `
+                <div class="context-menu-item" onclick="showFileDetails('${fileName}', '${size}')">
+                    <i class="fas fa-info-circle"></i> Details
+                </div>
+                <div class="context-menu-item" onclick="generateShareLink('${fileName}')">
+                    <i class="fas fa-share-alt"></i> Share
+                </div>
+                <div class="context-menu-item" onclick="toggleFavorite('${fileName}')">
+                    <i class="fas fa-star${isFav ? '' : '-o'}"></i> ${isFav ? 'Unfavorite' : 'Favorite'}
+                </div>
+                <div class="context-menu-item" style="border-top: 1px solid var(--border-color); margin-top: 4px; padding-top: 8px;">
+                    <i class="fas fa-download"></i> Download
+                </div>
+                <div class="context-menu-item text-red-400" onclick="deleteItem('${fileName}')">
+                    <i class="fas fa-trash"></i> Delete
+                </div>
+            `;
+            
+            document.body.appendChild(contextMenu);
+            
+            document.addEventListener('click', function removeMenu() {
+                if (contextMenu) {
+                    contextMenu.remove();
+                    contextMenu = null;
+                }
+                document.removeEventListener('click', removeMenu);
+            });
+        }
+
+        // ================= MORE PREMIUM FUNCTIONS =================
+        
+        // Bulk Download Selected Files
+        async function downloadSelected() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            const selectedFiles = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (selectedFiles.length === 0) {
+                showToast('No files selected', 'info');
+                return;
+            }
+            
+            if (selectedFiles.length === 1) {
+                // Single file - direct download
+                const link = document.createElement('a');
+                link.href = `/shared/${encodeURIComponent(selectedFiles[0])}`;
+                link.download = selectedFiles[0].split('/').pop();
+                link.click();
+                showToast('Downloading...', 'success');
+                return;
+            }
+            
+            // Multiple files - show toast and download sequentially
+            showToast(`Downloading ${selectedFiles.length} files...`, 'info');
+            for (let i = 0; i < selectedFiles.length; i++) {
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.href = `/shared/${encodeURIComponent(selectedFiles[i])}`;
+                    link.download = selectedFiles[i].split('/').pop();
+                    link.click();
+                }, i * 500); // Stagger downloads
+            }
+        }
+        
+        // Rename File
+        function renameFile(fileName) {
+            const displayName = fileName.split('/').pop();
+            const folderPath = fileName.includes('/') ? fileName.substring(0, fileName.lastIndexOf('/') + 1) : '';
+            const ext = displayName.split('.').pop();
+            const nameWithoutExt = displayName.substring(0, displayName.lastIndexOf('.'));
+            
+            const newName = prompt('Enter new name:', nameWithoutExt);
+            if (!newName || newName === nameWithoutExt) return;
+            
+            const fullNewName = folderPath + newName + '.' + ext;
+            
+            fetch('/api/rename', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ oldName: fileName, newName: fullNewName })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('File renamed successfully', 'success');
+                    loadFiles();
+                } else {
+                    showToast(data.message || 'Failed to rename', 'error');
+                }
+            })
+            .catch(err => {
+                showToast('Error renaming file', 'error');
+                console.error(err);
+            });
+        }
+        
+        // Duplicate File Detection
+        let allFilesCache = [];
+        
+        function detectDuplicates() {
+            const duplicates = [];
+            const nameMap = {};
+            
+            allFilesCache.forEach(file => {
+                const name = file.name.split('/').pop();
+                if (!nameMap[name]) {
+                    nameMap[name] = [];
+                }
+                nameMap[name].push(file);
+            });
+            
+            Object.keys(nameMap).forEach(name => {
+                if (nameMap[name].length > 1) {
+                    duplicates.push(...nameMap[name]);
+                }
+            });
+            
+            if (duplicates.length === 0) {
+                showToast('No duplicate files found', 'info');
+                return;
+            }
+            
+            // Show duplicates in file list
+            const fileList = document.getElementById('fileList');
+            const cards = document.querySelectorAll('.file-card');
+            let visibleCount = 0;
+            
+            cards.forEach(card => {
+                const fileName = card.getAttribute('data-filename');
+                const baseName = fileName.split('/').pop();
+                if (nameMap[baseName] && nameMap[baseName].length > 1) {
+                    card.style.display = 'flex';
+                    card.style.borderColor = '#f59e0b';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            showToast(`Found ${visibleCount} duplicate files`, 'info');
+        }
+        
+        // Update loadFiles to cache files for duplicate detection
+        const originalLoadFiles = loadFiles;
+        loadFiles = async function() {
+            await originalLoadFiles();
+            // Reset card borders after loading
+            document.querySelectorAll('.file-card').forEach(card => {
+                card.style.borderColor = '';
+            });
+        };
+        
+        // Select All Visible (respecting current filter)
+        function selectAllVisible() {
+            const visibleCards = document.querySelectorAll('.file-card[style*="display: flex"], .file-card:not([style*="display: none"])');
+            visibleCards.forEach(card => {
+                const checkbox = card.querySelector('.file-checkbox');
+                if (checkbox && checkbox.offsetParent !== null) {
+                    checkbox.checked = true;
+                }
+            });
+            updateSelectedCount();
+        }
+        
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + A to select all visible
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !e.shiftKey) {
+                e.preventDefault();
+                selectAllVisible();
+            }
+            // Escape to close modals
+            if (e.key === 'Escape') {
+                closePreview();
+                closeSettings();
+                if (contextMenu) {
+                    contextMenu.remove();
+                    contextMenu = null;
+                }
+            }
+            // Delete key to delete selected
+            if (e.key === 'Delete' && !e.ctrlKey && !e.metaKey) {
+                const selected = document.querySelectorAll('.file-checkbox:checked');
+                if (selected.length > 0) {
+                    deleteSelected();
+                }
+            }
+        });
+
+        // Initialize
+        detectSystemTheme();
+        displayRecentUploads();
+
+        // Initial Load
+        checkAuth();
+        loadFiles();
+    </script>
+</body>
+</html>

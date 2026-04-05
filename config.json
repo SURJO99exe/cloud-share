@@ -1,0 +1,10 @@
+{
+  "password": "b3282a2f2a28757b3a18ab833de16a9c54518c0b0cf493e3f0a7cf09386f326a",
+  "passwordEnabled": false,
+  "serverName": "Premium Cloud Share",
+  "maxUploadSize": null,
+  "allowedFileTypes": [
+    "*"
+  ],
+  "sessionTimeout": 3600000
+}
