@@ -4,6 +4,9 @@ package-lock.json
 
 # Capacitor
 android/
+!android/app/src/main/AndroidManifest.xml
+!android/app/src/main/java/com/cloudshare/app/BootReceiver.java
+!android/app/src/main/java/com/cloudshare/app/MainActivity.java
 ioss/
 
 # Electron
