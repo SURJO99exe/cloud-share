@@ -56,8 +56,18 @@
       "icon": "public/icon.png"
     },
     "win": {
-      "target": "dir",
-      "icon": "public/icon.png"
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "public/icon.png",
+      "publisherName": "Cloud Share Team"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "runAfterFinish": true
     },
     "linux": {
       "target": "AppImage",

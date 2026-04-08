@@ -90,7 +90,8 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          artifacts/**/*
+          artifacts/android-apk/*.apk
+          artifacts/desktop-windows/*.exe
         tag_name: v${{ github.run_number }}
         name: Release v${{ github.run_number }}
         draft: false
