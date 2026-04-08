@@ -32,7 +32,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: desktop-windows
-        path: dist/
+        path: dist/*.exe
 
   build-android:
     runs-on: ubuntu-latest
@@ -96,5 +96,6 @@ jobs:
         name: Release v${{ github.run_number }}
         draft: false
         prerelease: false
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
